@@ -1,0 +1,9 @@
+/.idea
+*.DS_Store
+*.gob
+/pkg
+/bin
+/vendor
+*.log
+*.local.yml
+tmp.yaml
