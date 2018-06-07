@@ -8,19 +8,20 @@ import (
 )
 
 type Specification struct {
-	Debug       	bool
-	Port        	int					`default:"7784"`
-	User        	string
-	Users       	[]string
-	Rate        	float32
-	Timeout     	time.Duration
-	ColorCodes  	map[string]int
-	MongoHost  		string			 	`default:"localhost:27017"`
+	Debug       		bool
+	Port        		int					`default:"7784"`
+	User        		string
+	Users       		[]string
+	Rate        		float32
+	Timeout     		time.Duration
+	ColorCodes  		map[string]int
+	MongoHost  			string			 	`default:"localhost:27017"`
 	//MongoHost  		string			 	`default:"db.mvp.nomad.space:27017"`
-	MongoDB  		string			 	`default:"db_name"`
-	MongoCollUsers  string			 	`default:"users"`
-	JwtSecret  		string			 	`default:"jwt_secret"`
-	JwtTimeout  	time.Duration	 	`default:"24h""`
+	MongoDB  			string			 	`default:"db_name"`
+	MongoCollUsers  	string			 	`default:"users"`
+	MongoCollBookings	string			 	`default:"bookings"`
+	JwtSecret  			string			 	`default:"jwt_secret"`
+	JwtTimeout  		time.Duration	 	`default:"24h""`
 }
 
 func (r *Resources) initConfig() error {
