@@ -22,7 +22,7 @@ func (m Mail) Send(to string, subject string, body hermes.Email) error {
 		Product: hermes.Product{
 			Name: "Nomad Space",
 			Link: "https://nomad.space/",
-			Logo: "http://nomad.space/wp-content/uploads/2018/02/logo-nomad.svg",
+			Logo: "https://nomad.space/Logo-web.png",
 			Copyright: "Copyright © 2018 Nomad Space. All rights reserved.",
 		},
 	}
@@ -35,7 +35,7 @@ func (m Mail) Send(to string, subject string, body hermes.Email) error {
 	auth := smtp.PlainAuth("", m.SmtpLogin, m.SmtpPassword, m.SmtpHost)
 
 	msg := []byte(
-		"MIME-version: 1.0;\r\n"+
+			"MIME-version: 1.0;\r\n"+
 			"Content-Type: text/html; charset=\"UTF-8\";\r\n" +
 			"To: "+to+"\r\n" +
 			"From: "+m.From+"\r\n" +
