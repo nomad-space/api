@@ -11,6 +11,7 @@ import (
 	restfulspec "github.com/emicklei/go-restful-openapi"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+	"nomad/api/src/sendmail/templates"
 )
 
 type AuthController struct {
@@ -202,6 +203,13 @@ func (u *AuthController) Signup(request *restful.Request, response *restful.Resp
 			WriteErrorResponse(response, http.StatusInternalServerError, "")
 			return
 		}
+	}
+
+	err = u.Resources.Mail.Send( user.Email,
+					"Welcome to Nomad Space!",
+					templates.Welcome(user.FirstName + " " + user.LastName, "http://blablablabla"))
+	if err != nil {
+		u.Resources.Log.Panic().Msgf("Error send mail to %s: %s", user.Email, err.Error())
 	}
 
 	response.WriteHeaderAndEntity(http.StatusCreated, nil)

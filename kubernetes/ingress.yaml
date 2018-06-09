@@ -2,14 +2,14 @@ apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   labels:
-    app: {{ .ServiceName }}
-  name: {{ .ServiceName }}
+    app: __ServiceName__
+  name: __ServiceName__
 spec:
   rules:
-  - host: {{ .ServiceHost }}
+  - host: __ServiceHost__
     http:
       paths:
       - path: /
         backend:
-          serviceName: {{ .ServiceName }}
+          serviceName: __ServiceName__
           servicePort: 80

@@ -1,9 +1,9 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: {{ .ServiceName }}
+  name: __ServiceName__
   labels:
-    app: {{ .ServiceName }}
+    app: __ServiceName__
 spec:
   replicas: 3
   strategy:
@@ -14,25 +14,25 @@ spec:
   template:
     metadata:
       labels:
-        app: {{ .ServiceName }}
+        app: __ServiceName__
     spec:
       containers:
-      - name: {{ .ServiceName }}
-        image: {{ .ContainerImage }}:{{ .Release }}
+      - name: __ServiceName__
+        image: __ContainerImage__:__Release__
         imagePullPolicy: Always
         ports:
-        - containerPort: {{ .AppPort }}
+        - containerPort: __AppPort__
 #        env:
 #        - name: PORT
-#          value: {{ .ServicePort }}
+#          value: __ServicePort__
 #        livenessProbe:
 #          httpGet:
 #            path: /healthz
-#            port: {{ .AppPort }}
+#            port: __AppPort__
 #        readinessProbe:
 #          httpGet:
 #            path: /readyz
-#            port: {{ .AppPort }}
+#            port: __AppPort__
 #        resources:
 #          limits:
 #            cpu: 10m

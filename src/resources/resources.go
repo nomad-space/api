@@ -8,6 +8,7 @@ type Resources struct {
 	Config 	Specification
 	Mongo 	MongoDB
 	Log 	zerolog.Logger
+	Mail 	Mail
 }
 
 var instanceResources *Resources
@@ -22,6 +23,9 @@ func GetInstance() (r *Resources, err error) {
 			return instanceResources, err
 		}
 		if err := instanceResources.initMongo(); err != nil {
+			return instanceResources, err
+		}
+		if err := instanceResources.initMail(); err != nil {
 			return instanceResources, err
 		}
 	}
