@@ -34,6 +34,9 @@ type ParamsSignin struct {
 	Email			string			`json:"email" description:"email of the user" valid:"required"`
 	Password 		string			`json:"password" description:"password of the user" valid:"required"`
 }
+type ParamsHash struct {
+	Hash			string			`json:"hash" description:"confirm code of the user" valid:"required"`
+}
 
 func (u *AuthController) WebService() *restful.WebService {
 	ws := new(restful.WebService)
@@ -53,6 +56,13 @@ func (u *AuthController) WebService() *restful.WebService {
 		//Reads(ParamsSignin{}).
 		//Param(ws.BodyParameter("ParamsSignin", "params for signin").DataType("ParamsSignin")).
 		Doc("Signin"))
+
+	ws.Route(ws.GET("/confirm/{hash}").To(u.Confirm).
+		Metadata(restfulspec.KeyOpenAPITags, tags).
+		Consumes(restful.MIME_JSON).
+		Produces(restful.MIME_JSON).
+		Param(ws.PathParameter("hash", "activate code of the user").DataType("string")).
+		Doc("Confirm"))
 
 	ws.Route(ws.GET("/refresh").To(u.Refresh).
 		Filter(filters.ValidateJWT).
@@ -146,6 +156,45 @@ func (u *AuthController) Signin(request *restful.Request, response *restful.Resp
 	response.WriteAsJson(map[string]string{"token": tokenString})
 }
 
+func (u *AuthController) Confirm(request *restful.Request, response *restful.Response) {
+
+	hash := request.PathParameter("hash")
+
+	collection, session, err := u.Resources.Mongo.UserCollectionAndSession()
+	if err != nil {
+		u.Resources.Log.Debug().Msgf("Connection failed: %s", err.Error())
+		WriteErrorResponse(response, http.StatusBadRequest, "Connection failed")
+		return
+	}
+	defer session.Close()
+
+	u.Resources.Log.Debug().Msgf("hash: %#v\n", hash)
+
+	user := models.Users{}
+	err = collection.Find(bson.M{"confirm_code": hash}).One(&user)
+	if err != nil {
+		if err == mgo.ErrNotFound {
+			WriteErrorResponse(response, http.StatusBadRequest, "Confirm code not found")
+		} else {
+			u.Resources.Log.Debug().Msgf("find user error: %s", err.Error())
+			WriteErrorResponse(response, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+
+	user.ConfirmToken = ""
+	user.Status = models.USER_STATUS_ACTIVE
+
+	err = collection.Update(bson.M{"email": user.Email}, &user)
+	if err != nil {
+		u.Resources.Log.Debug().Msgf("Update user error: %s", err.Error())
+		WriteErrorResponse(response, http.StatusInternalServerError, "")
+		return
+	}
+
+	WriteSuccessResponse(response, nil, "User activation was successful")
+}
+
 func (u *AuthController) Refresh(request *restful.Request, response *restful.Response) {
 
 	tokenString := request.Request.Context().Value("JwtToken");
@@ -183,6 +232,8 @@ func (u *AuthController) Signup(request *restful.Request, response *restful.Resp
 		WriteErrorResponse(response, http.StatusNotAcceptable, err.Error())
 		return
 	}
+
+	user.GenerateConfirmToken()
 
 	collection, session, err := u.Resources.Mongo.UserCollectionAndSession();
 	if err != nil {

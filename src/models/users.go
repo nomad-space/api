@@ -3,6 +3,7 @@ package models
 import (
 	"time"
 	"errors"
+	"math/rand"
 
 	"nomad/api/src/resources"
 	"golang.org/x/crypto/bcrypt"
@@ -12,15 +13,21 @@ import (
 
 type Users struct {
 	Id				bson.ObjectId	`bson:"_id,omitempty" json:"-" optional:"true"`
+	Status			int				`json:"status" description:"status of the user" default:"0" valid:"required"`
 	FirstName		string			`json:"firstname" description:"firstname of the user" default:"john" valid:"required"`
 	LastName 		string			`json:"lastname" description:"lastname of the user" default:"brown" valid:"required"`
 	Phone 			string			`json:"phone" description:"phone of the user" default:"+1..."`
 	Email		 	string			`json:"email" description:"email of the user" default:"example@domain.com" valid:"required"`
 	Password		string			`bson:"-" json:"password" description:"password of the user" valid:"required"`
 	HashedPassword	[]byte			`bson:"password" json:"-"`
+	ConfirmToken	string			`bson:"confirm_token" json:"-"`
 	CreatedAt		time.Time		`bson:"created_at" json:"-" optional:"true"`
 	UpdatedAt		time.Time		`bson:"updated_at" json:"-" optional:"true"`
 }
+
+const USER_STATUS_NEW = 0
+const USER_STATUS_ACTIVE = 1
+const USER_STATUS_BLOCK = 2
 
 func (u *Users) GenerateHashPassword() ([]byte, error) {
 
@@ -36,6 +43,21 @@ func (u *Users) GenerateHashPassword() ([]byte, error) {
 	u.HashedPassword = hashedPassword
 
 	return hashedPassword, err
+}
+
+func (u *Users) GenerateConfirmToken() (string) {
+
+	rand.Seed(time.Now().UnixNano())
+
+	var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+	b := make([]rune, 32)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	u.ConfirmToken = string(b)
+
+	return string(b)
 }
 
 func (u *Users) CompareHashAndPassword(password string) (error) {
