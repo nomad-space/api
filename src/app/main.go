@@ -31,6 +31,7 @@ func (a *App) Run() {
 	//wsContainer.Filter(wsContainer.OPTIONSFilter)
 	restful.Add(v1.InitAuthController().WebService())
 	restful.Add(v1.InitUserController().WebService())
+	restful.Add(v1.InitBookingController().WebService())
 
 	// swagger
 
