@@ -32,6 +32,7 @@ func (a *App) Run() {
 	restful.Add(v1.InitAuthController().WebService())
 	restful.Add(v1.InitUserController().WebService())
 	restful.Add(v1.InitBookingController().WebService())
+	restful.Add(v1.InitHotelController().WebService())
 
 	// swagger
 

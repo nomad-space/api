@@ -15,6 +15,7 @@ type Specification struct {
 	MongoDB  			string			 	`default:"db_name"`
 	MongoCollUsers  	string			 	`default:"users"`
 	MongoCollBookings	string			 	`default:"bookings"`
+	MongoCollHotels		string			 	`default:"hotels"`
 	JwtSecret  			string			 	`default:"jwt_secret"`
 	JwtTimeout  		time.Duration	 	`default:"24h"`
 	SmtpLogin			string				`default:"no-reply@mailman.nomad.space"`
