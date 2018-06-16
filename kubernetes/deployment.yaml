@@ -34,11 +34,11 @@ spec:
 #        livenessProbe:
 #          httpGet:
 #            path: /healthz
-#            port: __AppPort__
+#            port: {{ .AppPort }}
 #        readinessProbe:
 #          httpGet:
 #            path: /readyz
-#            port: __AppPort__
+#            port: {{ .AppPort }}
 #        resources:
 #          limits:
 #            cpu: 10m

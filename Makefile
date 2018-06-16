@@ -44,17 +44,13 @@ push: container
 minikube: push
 	for t in $$(find ./kubernetes -type f -name "*.yaml"); do \
         cat $$t | \
-        	sed -E "s/\{\{(\s*)\.Release(\s*)\}\}/$(RELEASE)/g" | \
-        	sed -E "s/\{\{(\s*)\.ServiceName(\s*)\}\}/$(APP)/g" | \
-        	sed -E "s/\{\{(\s*)\.ServiceHost(\s*)\}\}/$(HOST)/g" | \
-        	sed -E "s/\{\{(\s*)\.AppPort(\s*)\}\}/$(PORT_APP)/g" | \
-        	sed -E "s/\{\{(\s*)\.ContainerImage(\s*)\}\}/$(CONTAINER_IMAGE)/g" | \
-        	sed -E "s/\{\{(\s*)\.ServicePort(\s*)\}\}/$(PORT)/g"; \
+        	sed -E "s/__Release__/$(RELEASE)/g" | \
+        	sed -E "s/__ServiceName__/$(APP)/g" | \
+        	sed -E "s/__ServiceHost__/$(HOST)/g" | \
+        	sed -E "s/__AppPort__/$(PORT_APP)/g" | \
+        	sed -E "s/__ContainerImage__/$(CONTAINER_IMAGE2)/g" | \
+        	sed -E "s/__ServicePort__/$(PORT)/g"; \
         echo $$"\n"---; \
     done > tmp.yaml;
 	kubectl apply -f tmp.yaml
-
-minikube-update:
 	kubectl patch deployment ${APP} -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"date\":\"`date +'%s'`\"}}}}}"
-	kubectl patch service ${APP} -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"date\":\"`date +'%s'`\"}}}}}"
-	kubectl patch ingress ${APP} -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"date\":\"`date +'%s'`\"}}}}}"
