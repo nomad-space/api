@@ -9,6 +9,7 @@ import (
 	restful "github.com/emicklei/go-restful"
 	restfulspec "github.com/emicklei/go-restful-openapi"
 	"gopkg.in/mgo.v2/bson"
+	"time"
 )
 
 type BookingController struct {
@@ -76,6 +77,12 @@ func (u *BookingController) Create(request *restful.Request, response *restful.R
 		return
 
 	}
+
+	booking.Id = bson.NewObjectId()
+	booking.UpdatedAt = time.Now()
+	booking.CreatedAt = booking.UpdatedAt
+	u.Resources.Log.Debug().Msgf("Before insert booking: %+v", booking)
+
 	defer session.Close()
 	err = collection.Insert(&booking)
 	if err != nil {
@@ -84,7 +91,7 @@ func (u *BookingController) Create(request *restful.Request, response *restful.R
 		return
 	}
 
-	response.WriteHeaderAndEntity(http.StatusCreated, nil)
+	response.WriteHeaderAndEntity(http.StatusCreated, booking)
 }
 
 func (u *BookingController) List(request *restful.Request, response *restful.Response) {
