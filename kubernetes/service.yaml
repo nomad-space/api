@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .ServiceName }}
+  name: __ServiceName__
   labels:
-    app: {{ .ServiceName }}
+    app: __ServiceName__
 spec:
   ports:
-  - port: {{ .ServicePort }}
-    targetPort: {{ .AppPort }}
+  - port: __ServicePort__
+    targetPort: __AppPort__
     protocol: TCP
     name: http
   selector:
-    app: {{ .ServiceName }}
+    app: __ServiceName__

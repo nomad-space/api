@@ -7,7 +7,7 @@ HOST?=api.mvp.nomad.space
 RELEASE?=0.0.7
 COMMIT?=$(shell git rev-parse --short HEAD)
 BUILD_TIME?=$(shell date -u '+%Y-%m-%d_%H:%M:%S')
-CONTAINER_IMAGE?=/nomadspace/${APP}
+CONTAINER_IMAGE?=nomadspace/${APP}
 
 GOOS?=linux
 GOARCH?=amd64

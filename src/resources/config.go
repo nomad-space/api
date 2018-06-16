@@ -8,23 +8,26 @@ import (
 )
 
 type Specification struct {
-	Debug       	bool
-	Port        	int					`default:"7784"`
-	User        	string
-	Users       	[]string
-	Rate        	float32
-	Timeout     	time.Duration
-	ColorCodes  	map[string]int
-	MongoHost  		string			 	`default:"localhost:27017"`
-	//MongoHost  		string			 	`default:"db.mvp.nomad.space:27017"`
-	MongoDB  		string			 	`default:"db_name"`
-	MongoCollUsers  string			 	`default:"users"`
-	JwtSecret  		string			 	`default:"jwt_secret"`
-	JwtTimeout  	time.Duration	 	`default:"24h""`
+	Debug       		bool				`default:"true"`
+	Port        		int					`default:"7784"`
+	FrontURL  			string			 	`default:"http://mvp.nomad.space"`
+	MongoHost  			string			 	`default:"127.0.0.1:27017"`
+	MongoDB  			string			 	`default:"db_name"`
+	MongoCollUsers  	string			 	`default:"users"`
+	MongoCollBookings	string			 	`default:"bookings"`
+	MongoCollHotels		string			 	`default:"hotels"`
+	JwtSecret  			string			 	`default:"jwt_secret"`
+	JwtTimeout  		time.Duration	 	`default:"24h"`
+	SmtpLogin			string				`default:"no-reply@mailman.nomad.space"`
+	SmtpPassword		string				`default:"password"`
+	SmtpHost			string				`default:"smtp.yandex.ru"`
+	SmtpPort			string				`default:"25"`
+	SendmailFrom		string				`default:"no-reply@mailman.nomad.space"`
 }
 
 func (r *Resources) initConfig() error {
 	var s Specification
+
 	err := envconfig.Process("myapp", &s)
 	if err != nil {
 		log.Fatal(err.Error())
