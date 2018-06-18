@@ -42,6 +42,16 @@ func (m MongoDB) HotelCollectionAndSession() (*mgo.Collection, *mgo.Session, err
 	}
 }
 
+func (m MongoDB) LocationCollectionAndSession() (*mgo.Collection, *mgo.Session, error) {
+	if m.Session != nil {
+		session := m.Session.Copy()
+		return session.DB(m.Config.MongoDB).C(m.Config.MongoCollLocations), session, nil
+	} else {
+		m.Resources.Log.Debug().Msgf("No original session found")
+		return nil, nil, errors.New("No original session found")
+	}
+}
+
 func (r *Resources) initMongo() error {
 	r.Log.Debug().Msg("Connecting to local mongo server....")
 

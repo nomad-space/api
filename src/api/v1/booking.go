@@ -1,15 +1,14 @@
 package v1
 
 import (
-	//"fmt"
 	"net/http"
-	//"nomad/api/src/app/filters"
+	"time"
+	"encoding/json"
 	"nomad/api/src/resources"
 	"nomad/api/src/models"
 	restful "github.com/emicklei/go-restful"
 	restfulspec "github.com/emicklei/go-restful-openapi"
 	"gopkg.in/mgo.v2/bson"
-	"time"
 )
 
 type BookingController struct {
@@ -58,6 +57,14 @@ func (u *BookingController) WebService() *restful.WebService {
 		//Produces(restful.MIME_JSON).
 		Doc("Info"))
 
+	ws.Route(ws.PATCH("/{booking_id}").To(u.Update).
+		Metadata(restfulspec.KeyOpenAPITags, tags).
+		Param(ws.PathParameter("booking_id", "identifier of the booking").DataType("string")).
+		//Filter(filters.ValidateJWT).
+		//Consumes(restful.MIME_JSON).
+		//Produces(restful.MIME_JSON).
+		Doc("Info"))
+
 	return ws
 }
 
@@ -79,6 +86,7 @@ func (u *BookingController) Create(request *restful.Request, response *restful.R
 	}
 
 	booking.Id = bson.NewObjectId()
+	booking.Status = models.BOOKING_STATUS_NEW
 	booking.UpdatedAt = time.Now()
 	booking.CreatedAt = booking.UpdatedAt
 	u.Resources.Log.Debug().Msgf("Before insert booking: %+v", booking)
@@ -106,7 +114,13 @@ func (u *BookingController) List(request *restful.Request, response *restful.Res
 
 	var results []models.Booking
 
-	err = collection.Find(bson.M{}).All(&results)
+
+	pipeline := []bson.M{
+		bson.M{"$lookup": bson.M{ "from": "hotels", "localField": "hotel_id", "foreignField": "id", "as": "hotel"}},
+		bson.M{"$lookup": bson.M{ "from": "locations", "localField": "location_id", "foreignField": "id", "as": "location"}},
+	}
+	err = collection.Pipe(pipeline).All(&results)
+
 	if err != nil {
 		u.Resources.Log.Debug().Msgf("Find booking error: %s", err.Error())
 		WriteErrorResponse(response, http.StatusInternalServerError, "")
@@ -140,6 +154,69 @@ func (u *BookingController) Info(request *restful.Request, response *restful.Res
 		return
 	}
 	u.Resources.Log.Debug().Msgf("results: %s", results)
+
+	pipeline := []bson.M{
+		bson.M{"$match": bson.M{"_id": bson.ObjectIdHex(bookingId)}},
+		bson.M{"$lookup": bson.M{ "from": "hotels", "localField": "hotel_id", "foreignField": "id", "as": "hotel"}},
+		bson.M{"$lookup": bson.M{ "from": "locations", "localField": "location_id", "foreignField": "id", "as": "location"}},
+	}
+
+	err = collection.Pipe(pipeline).One(&results)
+	if err != nil {
+		u.Resources.Log.Debug().Msgf("Pipeline failed: %s", err.Error())
+		WriteErrorResponse(response, http.StatusBadRequest, "Pipeline failed")
+		return
+	}
+
+	WriteSuccessResponse(response, results, "")
+}
+
+func (u *BookingController) Update(request *restful.Request, response *restful.Response) {
+
+	decoder := json.NewDecoder(request.Request.Body)
+	var params interface{}
+	err := decoder.Decode(&params)
+	if err != nil {
+		panic(err)
+	}
+	defer request.Request.Body.Close()
+	u.Resources.Log.Debug().Msgf("params: %+v", params)
+
+	bookingId := request.PathParameter("booking_id")
+	u.Resources.Log.Debug().Msgf("bookingId: %+v", bookingId)
+
+	collection, session, err := u.Resources.Mongo.BookingCollectionAndSession();
+	if err != nil {
+		u.Resources.Log.Debug().Msgf("Connection failed: %s", err.Error())
+		WriteErrorResponse(response, http.StatusBadRequest, "Connection failed")
+		return
+
+	}
+	defer session.Close()
+
+	var results models.Booking
+
+	err = collection.Update(bson.M{"_id": bson.ObjectIdHex(bookingId)}, bson.M{"$set": params})
+	if err != nil {
+		u.Resources.Log.Debug().Msgf("Update booking error: %s", err.Error())
+		WriteErrorResponse(response, http.StatusInternalServerError, "")
+		return
+	}
+	u.Resources.Log.Debug().Msgf("results: %s", results)
+
+	pipeline := []bson.M{
+		bson.M{"$match": bson.M{"_id": bson.ObjectIdHex(bookingId)}},
+		bson.M{"$lookup": bson.M{ "from": "hotels", "localField": "hotel_id", "foreignField": "id", "as": "hotel"}},
+		bson.M{"$lookup": bson.M{ "from": "locations", "localField": "location_id", "foreignField": "id", "as": "location"}},
+	}
+	pipe := collection.Pipe(pipeline)
+
+	err = pipe.One(&results)
+	if err != nil {
+		u.Resources.Log.Debug().Msgf("Pipeline failed: %s", err.Error())
+		WriteErrorResponse(response, http.StatusBadRequest, "Pipeline failed")
+		return
+	}
 
 	WriteSuccessResponse(response, results, "")
 }
