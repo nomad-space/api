@@ -18,8 +18,8 @@ type Booking struct {
 	Hotel			[]Hotel			`json:"hotel" description:"hotel of the booking" valid:"required"`
 	GateId			int64			`bson:"gate_id" json:"gate_id" description:"gate ID of the booking" valid:"required"`
 	RoomId			int64			`bson:"room_id" json:"room_id" description:"room ID of the booking" valid:"required"`
-	CheckIn			string			`bson:"checkin_date" json:"checkin_date" description:"checkin of the booking" valid:"required"`
-	CheckOut		string			`bson:"checkout_date" json:"checkout_date" description:"checkout of the booking" valid:"required"`
+	CheckIn			time.Time		`bson:"checkin_date" json:"checkin_date" description:"checkin of the booking" valid:"required"`
+	CheckOut		time.Time		`bson:"checkout_date" json:"checkout_date" description:"checkout of the booking" valid:"required"`
 	Adults			int32			`bson:"adults" json:"adults" description:"adults of the booking" valid:"required"`
 	Price			float32			`bson:"price" json:"price" description:"price of the booking" valid:"required"`
 	Status			int32			`bson:"status" json:"status" description:"status of the booking" valid:"required"`

@@ -9,6 +9,7 @@ import (
 	restful "github.com/emicklei/go-restful"
 	restfulspec "github.com/emicklei/go-restful-openapi"
 	"gopkg.in/mgo.v2/bson"
+	"nomad/api/src/sendmail/templates"
 )
 
 type BookingController struct {
@@ -99,7 +100,31 @@ func (u *BookingController) Create(request *restful.Request, response *restful.R
 		return
 	}
 
-	response.WriteHeaderAndEntity(http.StatusCreated, booking)
+	var bookingObj models.Booking
+
+	pipeline := []bson.M{
+		bson.M{"$match": bson.M{"_id": booking.Id}},
+		bson.M{"$lookup": bson.M{ "from": "hotels", "localField": "hotel_id", "foreignField": "id", "as": "hotel"}},
+		bson.M{"$lookup": bson.M{ "from": "locations", "localField": "location_id", "foreignField": "id", "as": "location"}},
+	}
+
+	err = collection.Pipe(pipeline).One(&bookingObj)
+	if err != nil {
+		u.Resources.Log.Debug().Msgf("Pipeline failed: %s", err.Error())
+		WriteErrorResponse(response, http.StatusBadRequest, "Pipeline failed")
+		return
+	}
+
+	u.Resources.Log.Debug().Msgf("bookingObj: %+v", bookingObj)
+
+	err = u.Resources.Mail.Send( booking.Email,
+		"Booking is Processed!",
+		templates.Processed(bookingObj))
+	if err != nil {
+		u.Resources.Log.Panic().Msgf("Error send mail to %s: %s", booking.Email, err.Error())
+	}
+
+	response.WriteHeaderAndEntity(http.StatusCreated, bookingObj)
 }
 
 func (u *BookingController) List(request *restful.Request, response *restful.Response) {

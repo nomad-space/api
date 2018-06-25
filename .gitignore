@@ -7,3 +7,4 @@
 *.log
 *.local.yml
 tmp.yaml
+*.prod.env

@@ -82,7 +82,7 @@ func (u *LocationController) Create(request *restful.Request, response *restful.
 	u.Resources.Log.Debug().Msgf("Before insert location: %+v", location)
 
 	defer session.Close()
-	err = collection.Insert(&location)
+	_, err = collection.Upsert(bson.M{"id": location.Id}, bson.M{"$set": &location})
 	if err != nil {
 		u.Resources.Log.Debug().Msgf("Create location error: %s", err.Error())
 		WriteErrorResponse(response, http.StatusInternalServerError, "")

@@ -32,6 +32,7 @@ func (m Mail) Send(to string, subject string, body hermes.Email) error {
 		return err
 	}
 
+	m.Resources.Log.Debug().Msgf("login:%s pass:%s host:%s\n", m.SmtpLogin, m.SmtpPassword, m.SmtpHost)
 	auth := smtp.PlainAuth("", m.SmtpLogin, m.SmtpPassword, m.SmtpHost)
 
 	msg := []byte(
