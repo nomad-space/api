@@ -9,6 +9,7 @@ import (
 	restfulspec "github.com/emicklei/go-restful-openapi"
 	"gopkg.in/mgo.v2/bson"
 	"time"
+	"strconv"
 )
 
 type LocationController struct {
@@ -51,7 +52,7 @@ func (u *LocationController) WebService() *restful.WebService {
 
 	ws.Route(ws.GET("/{location_id}").To(u.Info).
 		Metadata(restfulspec.KeyOpenAPITags, tags).
-		Param(ws.PathParameter("location_id", "identifier of the location").DataType("string")).
+		Param(ws.PathParameter("location_id", "identifier of the location").DataType("integer")).
 		//Filter(filters.ValidateJWT).
 		//Consumes(restful.MIME_JSON).
 		//Produces(restful.MIME_JSON).
@@ -117,21 +118,26 @@ func (u *LocationController) List(request *restful.Request, response *restful.Re
 
 func (u *LocationController) Info(request *restful.Request, response *restful.Response) {
 
-	locationId := request.PathParameter("location_id")
-	u.Resources.Log.Debug().Msgf("locationId: %+v", locationId)
+	locationId, err := strconv.Atoi(request.PathParameter("location_id"))
+	if err != nil {
+		u.Resources.Log.Debug().Msgf("Convert param locationId failed: %s", err.Error())
+		WriteErrorResponse(response, http.StatusBadRequest, "Params failed")
+		return
+	}
+
+	u.Resources.Log.Debug().Msgf("locationId: %#v", locationId)
 
 	collection, session, err := u.Resources.Mongo.LocationCollectionAndSession();
 	if err != nil {
 		u.Resources.Log.Debug().Msgf("Connection failed: %s", err.Error())
 		WriteErrorResponse(response, http.StatusBadRequest, "Connection failed")
 		return
-
 	}
 	defer session.Close()
 
 	var results models.Location
 
-	err = collection.Find(bson.M{"_id": bson.ObjectIdHex(locationId)}).One(&results)
+	err = collection.Find(bson.M{"id": int(locationId)}).One(&results)
 	if err != nil {
 		u.Resources.Log.Debug().Msgf("Find location error: %s", err.Error())
 		WriteErrorResponse(response, http.StatusInternalServerError, "")
