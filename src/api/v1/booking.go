@@ -243,5 +243,26 @@ func (u *BookingController) Update(request *restful.Request, response *restful.R
 		return
 	}
 
+	params2 := params.(map[string]interface{})
+
+	if int(params2["status"].(float64)) == models.BOOKING_STATUS_CONSENT || int(params2["status"].(float64)) == models.BOOKING_STATUS_REFUSAL {
+
+		var title string
+
+		switch int(params2["status"].(float64)) {
+		case models.BOOKING_STATUS_CONSENT:
+			title = "Booking is Consent!"
+		case models.BOOKING_STATUS_REFUSAL:
+			title = "Booking is Refusal!"
+		}
+
+		err = u.Resources.Mail.Send( results.Email,
+			title,
+			templates.Processed(results))
+		if err != nil {
+			u.Resources.Log.Panic().Msgf("Error send mail to %s: %s", results.Email, err.Error())
+		}
+	}
+
 	WriteSuccessResponse(response, results, "")
 }
