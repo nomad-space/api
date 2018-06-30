@@ -50,6 +50,13 @@ func (u *BookingController) WebService() *restful.WebService {
 		//Produces(restful.MIME_JSON).
 		Doc("List"))
 
+	ws.Route(ws.GET("/check_timeout").To(u.CheckTimeout).
+		Metadata(restfulspec.KeyOpenAPITags, tags).
+		//Filter(filters.ValidateJWT).
+		//Consumes(restful.MIME_JSON).
+		//Produces(restful.MIME_JSON).
+		Doc("CheckTimeout"))
+
 	ws.Route(ws.GET("/{booking_id}").To(u.Info).
 		Metadata(restfulspec.KeyOpenAPITags, tags).
 		Param(ws.PathParameter("booking_id", "identifier of the booking").DataType("string")).
@@ -261,6 +268,64 @@ func (u *BookingController) Update(request *restful.Request, response *restful.R
 			templates.Processed(results))
 		if err != nil {
 			u.Resources.Log.Panic().Msgf("Error send mail to %s: %s", results.Email, err.Error())
+		}
+	}
+
+	WriteSuccessResponse(response, results, "")
+}
+
+
+func (u *BookingController) CheckTimeout(request *restful.Request, response *restful.Response) {
+
+	collection, session, err := u.Resources.Mongo.BookingCollectionAndSession();
+	if err != nil {
+		u.Resources.Log.Debug().Msgf("Connection failed: %s", err.Error())
+		WriteErrorResponse(response, http.StatusBadRequest, "Connection failed")
+		return
+
+	}
+	defer session.Close()
+
+	var results []models.Booking
+
+	pipeline := []bson.M{
+		bson.M{"$match": bson.M{"$and": []bson.M{bson.M{"created_at": bson.M{"$lte": time.Now().Add(time.Hour * -72)}},
+												bson.M{"$or": []bson.M{bson.M{"status": models.BOOKING_STATUS_NEW},
+																		bson.M{"status": models.BOOKING_STATUS_CONTACTED}},
+												}},
+								},
+		},
+		bson.M{"$lookup": bson.M{ "from": "hotels", "localField": "hotel_id", "foreignField": "id", "as": "hotel"}},
+		bson.M{"$lookup": bson.M{ "from": "locations", "localField": "location_id", "foreignField": "id", "as": "location"}},
+	}
+	pipe := collection.Pipe(pipeline)
+
+	err = pipe.All(&results)
+	if err != nil {
+		u.Resources.Log.Debug().Msgf("Pipeline failed: %s", err.Error())
+		WriteErrorResponse(response, http.StatusBadRequest, "Pipeline failed")
+		return
+	}
+
+	for _, booking := range results {
+
+		err = collection.Update(bson.M{"_id": booking.Id}, bson.M{"$set": bson.M{"status": models.BOOKING_STATUS_REFUSAL}})
+		if err != nil {
+			u.Resources.Log.Debug().Msgf("Update booking error: %s", err.Error())
+			WriteErrorResponse(response, http.StatusInternalServerError, "")
+			return
+		}
+
+		var title string
+
+		booking.Status = models.BOOKING_STATUS_REFUSAL
+		title = "Booking is Refusal!"
+
+		err = u.Resources.Mail.Send( booking.Email,
+			title,
+			templates.Processed(booking))
+		if err != nil {
+			u.Resources.Log.Panic().Msgf("Error send mail to %s: %s", booking.Email, err.Error())
 		}
 	}
 
